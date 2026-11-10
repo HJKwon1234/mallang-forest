@@ -80,6 +80,10 @@ button.stk:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
 .grow{display:flex;align-items:center;gap:.7rem;padding:.55rem 1rem;font-size:.92rem}
 .grow .bar{flex:1;height:14px;border:3px solid var(--ink);border-radius:99px;background:#fff;overflow:hidden;min-width:60px}
 .grow .bar i{display:block;height:100%;background:var(--good)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:.7rem}
+.chip{background:#FFE98A;font-size:1.05rem;min-height:46px}
+.reset{font-size:.85rem;min-height:40px;opacity:.7;margin-top:.4rem}
+.rs .card{background:var(--paper);max-width:24rem}
 .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .grades button{justify-content:center;font-size:1.15rem}
 .grades button.on{background:var(--ink);color:var(--paper)}
@@ -659,8 +663,10 @@ const ALL=[];[1,2,3].forEach(g=>WS.forEach(w=>GR[g][w].forEach((l,i)=>{ALL.push(
 const MAXSTARS=ALL.length*3;
 
 /* ───────── 저장 (기기 + 계정) ───────── */
-let S={rev:0,grade:1,stars:{},stickers:[],sound:true,diary:{},bun:[],car:0},P=null,cloud=null,pushing=false,dirty=false;
-function adopt(j){if(j&&j.stars){S=Object.assign(S,JSON.parse(JSON.stringify(j)));S.diary=S.diary||{};S.bun=S.bun||[];S.car=S.car||0}}
+const NAME0="단아";
+const fresh=()=>({rev:0,grade:1,stars:{},stickers:[],sound:true,diary:{},bun:[],car:0,name:NAME0});
+let S=fresh(),P=null,cloud=null,pushing=false,dirty=false;
+function adopt(j){if(j&&j.stars){S=Object.assign(S,JSON.parse(JSON.stringify(j)));S.diary=S.diary||{};S.bun=S.bun||[];S.car=S.car||0;S.name=S.name||NAME0}}
 function load(d){try{adopt(d&&d.stars?d:JSON.parse(localStorage.getItem("mallang-v2")||"{}"))}catch(e){}}
 function saveLocal(){try{localStorage.setItem("mallang-v2",JSON.stringify(S))}catch(e){}}
 function save(){S.rev=Date.now();saveLocal();push()}
@@ -733,22 +739,38 @@ function mallang(mood){
 }
 const mas=mood=>`<div class="mas ${mood}" id="mas">${mallang(mood)}</div>`;
 const starStr=n=>`<span class="stars" aria-label="별 ${n}개">${"<b>★</b>".repeat(n)}${"★".repeat(3-n)}</span>`;
-const PRAISE=["우와, 정답!","최고야!","정말 똑똑해!","바로 그거야!","멋지다!","짝짝짝! 잘했어!"];
-const OOPS=["괜찮아, 다시 해 보자!","아깝다! 한 번 더!","천천히 생각해 봐.","거의 다 왔어!"];
+const nm=()=>S.name||NAME0,jong=w=>{const c=w.charCodeAt(w.length-1);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28>0};
+const ya=()=>nm()+(jong(nm())?"아":"야"),ga=()=>nm()+(jong(nm())?"이가":"가"),ui=()=>nm()+(jong(nm())?"이의":"의");
+const praise=()=>pick(["우와, 정답!",`${nm()} 최고야!`,`${ya()}, 정말 똑똑해!`,"바로 그거야!",`멋지다, ${ya()}!`,"짝짝짝! 잘했어!"]);
+const oops=()=>pick([`괜찮아, ${ya()}. 다시 해 보자!`,"아깝다! 한 번 더!","천천히 생각해 봐.",`거의 다 왔어, ${ya()}!`]);
+const JOKES=[["세상에서 가장 빠른 닭은?","후다닥!"],["소가 웃으면?","우하하!"],["왕이 넘어지면?","킹콩!"],["바나나가 웃으면?","바나나킥!"],["오리가 얼면?","언덕!"],["신발이 화가 나면?","신발끈!"]];
+let JK=0;
+function talk(step){
+  const h=new Date().getHours(),hi=h<11?"좋은 아침이야":h<18?"안녕":"좋은 저녁이야",done=WS.filter(doneToday).length;
+  if(step==="pick")return{t:`좋아, ${ya()}! 어디로 놀러 갈까?`,c:[["가나다 숲","world:ko"],["ABC 바다","world:en"],["숫자 언덕","world:ma"],["다시 생각할래","chat:start"]]};
+  if(step==="talk")return{t:`${ya()}, 오늘 기분은 어때?`,c:[["신나!","chat:m1"],["그냥 그래","chat:m2"],["조금 졸려","chat:m3"],["수수께끼 내 줘","chat:joke"]]};
+  if(step==="m1")return{t:`나도 신나! ${ui()} 웃는 얼굴을 보면 내 새싹이 쑥쑥 자라는 것 같아.`,c:[["공부하러 가자!","quest"],["수수께끼 내 줘","chat:joke"]]};
+  if(step==="m2")return{t:"그런 날도 있지. 토끼 친구들을 보면 기분이 좋아질지도 몰라!",c:[["토끼 친구 볼래","book"],["한 단계만 해 볼래","quest"]]};
+  if(step==="m3")return{t:`졸릴 땐 한 단계만 하고 푹 쉬자. ${ga()} 하고 싶은 만큼만 하면 돼.`,c:[["한 단계만!","quest"],["오늘은 쉴래","chat:rest"]]};
+  if(step==="rest")return{t:`알겠어, ${ya()}. 푹 쉬고 내일 또 만나자!`,c:[["응, 안녕!","chat:start"]]};
+  if(step==="joke"){JK=(JK+1+rnd(JOKES.length-1))%JOKES.length;return{t:`${ya()}, 수수께끼 낼게! ${JOKES[JK][0]}`,c:[["음… 뭘까?","chat:ans"],["몰라, 알려 줘!","chat:ans"]]}}
+  if(step==="ans")return{t:`정답은… ${JOKES[JK][1]} 히히!`,c:[["하나 더!","chat:joke"],["이제 공부할래","quest"],["그만할래","chat:start"]]};
+  const t=total()===0?`${hi}, ${ya()}! 나는 말랑이야. 오늘부터 같이 공부하자!`:done===3?`${ya()}, 오늘 공부 끝! 정말 대단해. 다이어리에 도장 찍었어.`:done?`${ya()}, 잘하고 있어! 오늘의 공부가 ${3-done}개 남았어.`:`${hi}, ${ya()}! 오늘은 뭐 하고 놀까?`;
+  return{t,c:[[done===3?"다이어리 볼래":"오늘의 공부 할래!","quest"],["내가 고를래","chat:pick"],["말랑이랑 얘기할래","chat:talk"]]};
+}
 const WD=["일","월","화","수","목","금","토"];
 
 /* ───────── 화면 ───────── */
 const app=document.getElementById("app");
 function show(html,world){app.innerHTML=html;document.body.dataset.world=world||"";app.scrollTop=0}
 
-function home(){
-  P=null;const t=total(),st=stage(),next=[12,40,MAXSTARS][st],prev=[0,12,40][st],g=S.grade,n=new Date(),done=WS.filter(doneToday).length,sk=streak();
-  const msg=t===0?"안녕! 나는 말랑이야. 매일 조금씩 같이 공부하자!":done===3?"오늘 공부 끝! 다이어리에 도장을 찍었어.":st===2?"네 덕분에 머리에 꽃이 활짝 폈어!":"별을 모으면 내 새싹이 쑥쑥 자라!";
+function home(step){
+  P=null;const tk=talk(step||"start");const t=total(),st=stage(),next=[12,40,MAXSTARS][st],prev=[0,12,40][st],g=S.grade,n=new Date(),done=WS.filter(doneToday).length,sk=streak();
   show(`<div class="screen">
    <div class="top"><span class="pill stk">⭐ 별 ${t}개</span>
      <span class="row"><button class="pill stk" data-act="diary">📔 다이어리</button><button class="pill stk" data-act="book">🐰 친구 ${S.bun.length}/${BUNS.length}</button>
      <button class="pill stk" data-act="sound" aria-label="소리 켜기 끄기">${S.sound?"🔊":"🔇"}</button></span></div>
-   <div class="hero">${mas(t?"happy":"idle")}<div><h1>말랑이의 <span>공</span><span>부</span> <span>숲</span></h1><div class="bubble stk">${msg}</div></div></div>
+   <div class="hero">${mas(t?"happy":"idle")}<div><h1>말랑이의 <span>공</span><span>부</span> <span>숲</span></h1><div class="bubble stk" id="bub">${tk.t}</div><div class="chips">${tk.c.map(c=>`<button class="pill stk chip" data-act="go" data-go="${c[1]}">${c[0]}</button>`).join("")}</div></div></div>
    <div class="grades">${[1,2,3].map(k=>`<button class="pill stk${k===g?" on":""}" data-act="grade" data-g="${k}">${k}학년</button>`).join("")}</div>
    <div class="today stk"><div class="w"><b>오늘의 공부</b><span>${n.getMonth()+1}월 ${n.getDate()}일 ${WD[n.getDay()]}요일${sk>1?` · ${sk}일째 이어서 하는 중`:""}</span></div>
      <div class="chk">${WS.map(w=>`<i data-world="${w}" class="${doneToday(w)?"ok":""}">${WORLD[w].sub}${doneToday(w)?" ✔":""}</i>`).join("")}</div>
@@ -757,6 +779,7 @@ function home(){
      <span class="txt">토끼 친구 ${S.bun.length}/${BUNS.length}<br>${S.bun.length<BUNS.length?`다음 친구까지 🥕 ${S.car}/${cost()}`:"모두 모았어요!"}</span></button>
    <div class="worlds">${WS.map(k=>`<button class="wcard stk" data-world="${k}" data-act="world" data-w="${k}">
      <span class="glyph${k==="ko"?" k":""}" style="${k==="ma"?"font-size:1.4rem":""}">${WORLD[k].glyph}</span><span><b>${WORLD[k].name}</b><br><small>${g}학년 ${WORLD[k].sub}</small></span><span class="cnt">★ ${wstars(g,k)}/${GR[g][k].length*3}</span></button>`).join("")}</div>
+   <div class="row"><button class="pill stk reset" data-act="reset">처음부터 다시 하기 (초기화)</button></div>
   </div>`);
 }
 function world(w){
@@ -766,12 +789,12 @@ function world(w){
    <div class="levels">${ls.map((l,i)=>{const open=i===0||S.stars[lid(g,w,i-1)]>0,s=S.stars[lid(g,w,i)]||0;
      return `<button class="lv stk${open?"":" lock"}" ${open?`data-act="start" data-w="${w}" data-i="${i}"`:"disabled"}>
        <span class="n">${i+1}</span><span class="t"><b>${l.title}</b><span>${open?l.goal:"앞 단계를 먼저 끝내요"}</span></span>${open?starStr(s):"🔒"}</button>`}).join("")}</div>
-   <div class="foot">${mas("idle")}<div class="bubble stk">하고 싶은 단계를 눌러 봐! 어려우면 힌트가 있으니까 걱정 마.</div></div>
+   <div class="foot">${mas("idle")}<div class="bubble stk">${ya()}, 하고 싶은 단계를 눌러 봐! 어려우면 힌트가 있으니까 걱정 마.</div></div>
   </div>`,w);
 }
 function book(sel){
   P=null;const n=S.bun.length;if(sel==null||!S.bun.includes(sel))sel=n?S.bun[n-1]:null;
-  show(`<div class="screen"><div class="top"><button class="pill stk" data-act="home">← 숲으로</button><h2 style="font-size:1.7rem">토끼 친구들</h2><span class="pill stk">${n}/${BUNS.length}</span></div>
+  show(`<div class="screen"><div class="top"><button class="pill stk" data-act="home">← 숲으로</button><h2 style="font-size:1.7rem">${ui()} 토끼 친구들</h2><span class="pill stk">${n}/${BUNS.length}</span></div>
    <div class="showcase stk">${sel!=null?`<button data-act="bun" data-i="${sel}" aria-label="크게 보기">${bun(sel)}</button><div><b>${BUNS[sel].n}</b><span>${BUNS[sel].d}</span></div>`:`${bun(0,"sil")}<div><b>아직 친구가 없어요</b><span>문제를 하나 맞히면 첫 번째 토끼가 나타나요!</span></div>`}</div>
    <div class="book">${BUNS.map((b,i)=>S.bun.includes(i)?`<button class="slotb stk${i===sel?" sel":""}" data-act="bun" data-i="${i}">${bun(i)}${b.n}</button>`:`<div class="slotb stk none">${bun(i,"sil")}${i+1}번</div>`).join("")}</div>
    <p class="note">${n<BUNS.length?`문제를 맞힐 때마다 당근 🥕 1개! 다음 친구까지 ${cost()-S.car}개 남았어요.`:"스무 친구를 모두 찾았어요! 정말 대단해요."}</p></div>`);
@@ -781,6 +804,11 @@ function backup(){
     <p>아래 글자를 모두 복사해 메모 앱 등에 보관하세요. 다른 기기나 새로 설치한 뒤에는 보관한 글자를 이 칸에 붙여 넣고 “가져오기”를 누르면 별·다이어리·토끼 친구가 되살아나요.</p>
     <textarea id="bk" aria-label="백업 글자" spellcheck="false">${JSON.stringify(S).replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea><p id="bkmsg"></p>
     <div class="row"><button class="pill stk go" data-act="bkcopy">복사하기</button><button class="pill stk" data-act="bkload">가져오기</button><button class="pill stk" data-act="close">닫기</button></div></div></div>`);
+}
+function askReset(){
+  app.insertAdjacentHTML("beforeend",`<div class="reveal rs"><div class="card stk"><h2>정말 처음부터 다시 할까요?</h2>
+    <span>별, 다이어리, 토끼 친구 기록이 모두 지워져요. 지운 기록은 되돌릴 수 없어요.</span>
+    <div class="row"><button class="pill stk go" data-act="close">아니요, 그대로 둘래요</button><button class="pill stk" data-act="resetok">네, 모두 지울게요</button></div></div></div>`);
 }
 function zoom(i){
   app.insertAdjacentHTML("beforeend",`<div class="reveal zoom" data-act="close"><div class="card stk">${bun(i)}<b>${BUNS[i].n}</b><span>${BUNS[i].d}</span><button class="pill stk go" data-act="close">닫기</button></div></div>`);
@@ -798,7 +826,7 @@ function diary(y,m,sel){
       ${sel===td?`<div class="row moods" style="justify-content:flex-start"><span class="d">오늘 공부 어땠어?</span>${[["😆","재밌었어"],["🙂","괜찮았어"],["😵","어려웠어"]].map(x=>`<button class="pill stk${e.m===x[0]?" on":""}" data-act="mood" data-v="${x[0]}">${x[0]} ${x[1]}</button>`).join("")}</div>`:""}`
     :`<p>${sel===td?"아직 오늘 공부를 안 했어요.":"이날은 쉬었어요."}</p>${sel===td?`<div><button class="pill stk go" data-act="quest">오늘의 공부 시작 →</button></div>`:""}`;
   show(`<div class="screen">
-   <div class="top"><button class="pill stk" data-act="home">← 숲으로</button><h2 style="font-size:1.7rem">공부 다이어리</h2><span class="pill stk">공부한 날 ${allDays}일${streak()>1?` · 연속 ${streak()}일`:""}</span></div>
+   <div class="top"><button class="pill stk" data-act="home">← 숲으로</button><h2 style="font-size:1.7rem">${ui()} 공부 다이어리</h2><span class="pill stk">공부한 날 ${allDays}일${streak()>1?` · 연속 ${streak()}일`:""}</span></div>
    <div class="row"><button class="pill stk" data-act="month" data-y="${py}" data-m="${pm}" aria-label="이전 달">‹</button><b class="d" style="font-size:1.4rem;min-width:9rem;text-align:center">${y}년 ${m+1}월</b><button class="pill stk" data-act="month" data-y="${ny}" data-m="${nm}" aria-label="다음 달">›</button></div>
    <div class="cal stk">${cells}</div>
    <div class="page stk"><h3>${sm}월 ${sd}일 ${WD[sdate.getDay()]}요일</h3>${page}</div>
@@ -834,7 +862,7 @@ function mood(m,text){const el=document.getElementById("mas");if(el){el.classNam
 function correct(){
   const q=cur();P.lock=true;
   if(!q.retry){P.learned.push(q.learn);if(q.wrong===0&&!q.hinted)P.perfect++;else if(q.wrong>0)P.queue.push(Object.assign({},q,{retry:true}))}
-  sfx("ok");mood("happy",pick(PRAISE));
+  sfx("ok");mood("happy",praise());
   const p=document.getElementById("prompt");if(p&&q.done)p.innerHTML=q.done;
   if(q.after)speak(q.after,q.say[1]);
   const got=carrot();
@@ -844,12 +872,12 @@ function correct(){
 function advance(){if(!P)return;P.i++;P.i>=P.queue.length?finish():showQ()}
 function reveal(id){
   sfx("win");const conf=Array.from({length:22},()=>`<i style="left:${rnd(100)}%;background:${pick(["#FF7FA3","#4AA8F0","#FFB627","#35C07A","#FFE98A"])};animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*.6}s"></i>`).join("");
-  app.insertAdjacentHTML("beforeend",`<div class="reveal"><div class="conf">${conf}</div><div class="card stk"><h2>새 친구 발견!</h2>${bun(id)}<b>${BUNS[id].n}</b><span>${BUNS[id].d}</span>
+  app.insertAdjacentHTML("beforeend",`<div class="reveal"><div class="conf">${conf}</div><div class="card stk"><h2>${ui()} 새 친구 발견!</h2>${bun(id)}<b>${BUNS[id].n}</b><span>${BUNS[id].d}</span>
     <span>토끼 친구 ${S.bun.length}/${BUNS.length}</span><button class="pill stk go" data-act="got">도감에 넣기 →</button></div></div>`);
 }
 function wrong(btn){
   const q=cur();q.wrong++;sfx("no");btn.classList.add("shake");setTimeout(()=>btn.classList.remove("shake"),400);
-  mood("think",pick(OOPS));if(q.wrong===2&&q.stage===0)setTimeout(()=>{if(P&&cur()===q&&!P.lock)hint()},500);
+  mood("think",oops());if(q.wrong===2&&q.stage===0)setTimeout(()=>{if(P&&cur()===q&&!P.lock)hint()},500);
 }
 function hint(){
   const q=cur();if(P.lock)return;q.hinted=true;sfx("tap");
@@ -874,7 +902,7 @@ function finish(){
   const conf=Array.from({length:26},()=>`<i style="left:${rnd(100)}%;background:${pick(["#FF7FA3","#4AA8F0","#FFB627","#35C07A","#FFE98A"])};animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*.8}s"></i>`).join("");
   show(`<div class="conf">${conf}</div><div class="screen result">
    ${mas("happy")}
-   <h2>${["","끝까지 해냈어!","참 잘했어!","완벽해! 최고야!"][stars]}</h2>
+   <h2>${ya()}, ${["","끝까지 해냈어!","참 잘했어!","완벽해! 최고야!"][stars]}</h2>
    <div class="stars bigstars">${"<b>★</b>".repeat(stars)}${"★".repeat(3-stars)}</div>
    ${S.bun.length?`<div class="newstk stk">${bun(S.bun[S.bun.length-1])}<span style="font-size:1.1rem">토끼 친구 ${S.bun.length}/${BUNS.length}${S.bun.length<BUNS.length?` · 다음 친구까지 🥕 ${S.car}/${cost()}`:""}</span></div>`:""}
    ${left.length?"":`<div class="newstk stk"><span>💮</span>오늘의 공부 끝! 다이어리에 도장 쾅!</div>`}
@@ -893,13 +921,20 @@ app.addEventListener("click",ev=>{
   else if(a==="world"){sfx("tap");world(d.w)}
   else if(a==="book"){sfx("tap");book()}
   else if(a==="bun"){sfx("tap");book(+d.i);zoom(+d.i)}
-  else if(a==="close"){const z=document.querySelector(".zoom,.bk");if(z)z.remove()}
+  else if(a==="close"){const z=document.querySelector(".zoom,.bk,.rs");if(z)z.remove()}
   else if(a==="backup"){sfx("tap");backup()}
+  else if(a==="reset"){sfx("tap");askReset()}
+  else if(a==="resetok"){const keep={sound:S.sound,name:S.name};S=Object.assign(fresh(),keep);save();sfx("tap");home()}
+  else if(a==="go"){sfx("tap");const g=d.go;
+    if(g.startsWith("chat:")){home(g.slice(5));speak(document.getElementById("bub").textContent,"ko-KR")}
+    else if(g.startsWith("world:"))world(g.slice(6));
+    else if(g==="book")book();
+    else{const w=WS.find(x=>!doneToday(x));w?start(w,quest(w)):diary()}}
   else if(a==="bkcopy"){const t=document.getElementById("bk"),m=document.getElementById("bkmsg");t.focus();t.select();try{t.setSelectionRange(0,t.value.length)}catch(e){}
     const ok=()=>{m.textContent="복사했어요. 메모 앱에 붙여 넣어 보관하세요."},no=()=>{m.textContent="자동 복사가 안 돼요. 칸을 길게 눌러 ‘전체 선택 → 복사’를 해 주세요."};
     try{navigator.clipboard.writeText(t.value).then(ok,no)}catch(e){no()}}
   else if(a==="bkload"){const m=document.getElementById("bkmsg");try{const j=JSON.parse(document.getElementById("bk").value);if(!j||typeof j.stars!=="object"||!j.stars)throw 0;
-      S={rev:0,grade:1,stars:{},stickers:[],sound:true,diary:{},bun:[],car:0};adopt(j);save();sfx("ok");home()}
+      S=fresh();adopt(j);save();sfx("ok");home()}
     catch(e){m.textContent="가져올 수 없는 글자예요. 백업한 글자를 빠짐없이 붙여 넣었는지 확인해 주세요."}}
   else if(a==="got"){sfx("tap");advance()}
   else if(a==="diary"){sfx("tap");diary()}
