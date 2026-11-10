@@ -161,6 +161,7 @@ button.stk:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
 .slot.en{font-family:var(--f-latin);font-weight:600}
 .slot.fill{border-style:solid}
 .tile{min-width:4rem}
+.tile.sm,.slot.sm{font-size:1.45rem}
 .tile.glow{background:#FFE98A;animation:bob 1s ease-in-out infinite}
 @media (max-width:560px){.opts{grid-template-columns:repeat(2,1fr)}.qcard .big{font-size:3.6rem}.qcard .prompt{font-size:2.3rem}.prompt.line{font-size:1.6rem}}
 .foot{display:flex;align-items:flex-end;gap:12px}
@@ -549,7 +550,9 @@ const JAMO=[..."ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅑㅓㅕㅗㅛㅜ�
 const ABC=[..."abcdefghijklmnopqrstuvwxyz"];
 const EN_HELLO=[["Hello","안녕"],["Thanks","고마워"],["Sorry","미안해"],["Please","부탁해"],["Okay","좋아"],["Goodbye","잘 가"],["Yes","응"],["Happy","행복해"],["Friend","친구"],["School","학교"]];
 let PAD=null;
-function padHtml(q){const n=[...q.text].length,W=Math.round(q.cls==="en"?240*(.52*n+.6):240*(.92*n+.12)),r=(W/240).toFixed(3);
+function padHtml(q){if(q.free)return `<div class="padwrap"><canvas id="pad" class="stk" width="1100" height="300" style="width:100%;aspect-ratio:1100/300"></canvas></div>
+   <div class="row"><button class="pill stk" data-act="clr">↺ 지우기</button><button class="pill stk go" data-act="chk">다 썼어요!</button></div>`;
+  const n=[...q.text].length,W=Math.round(q.cls==="en"?240*(.52*n+.6):240*(.92*n+.12)),r=(W/240).toFixed(3);
   return `<div class="padwrap"><canvas id="pad" class="stk" width="${W}" height="240" style="width:min(100%,calc(min(36vh,16rem)*${r}));aspect-ratio:${W}/240"></canvas></div>
    <div class="row"><button class="pill stk" data-act="clr">↺ 지우기</button><button class="pill stk go" data-act="chk">다 썼어요!</button></div>`}
 function setupPad(q){
@@ -562,17 +565,18 @@ function setupPad(q){
     if(fat){k.lineWidth=H*.2;k.strokeText(q.text,W/2,H*.52)}k.fillText(q.text,W/2,H*.52)};
   const base=()=>{x.fillStyle="#fff";x.fillRect(0,0,W,H);x.strokeStyle="#D8DEE8";x.lineWidth=2;x.setLineDash([8,8]);x.beginPath();x.moveTo(0,H/2);x.lineTo(W,H/2);x.stroke();x.setLineDash([]);
     x.globalAlpha=PAD.dark?.36:.18;x.drawImage(G,0,0);x.globalAlpha=1;x.drawImage(U,0,0)};
-  const init=()=>{text(G,false);text(T,true);base()};
-  PAD={cv,W,H,G,T,U,u,base,dark:false,drawn:false};init();
+  const init=()=>{if(!q.free){text(G,false);text(T,true)}base()};
+  PAD={cv,W,H,G,T,U,u,base,dark:false,drawn:false,free:q.free,need:[...q.text.replace(/\s/g,"")].length*45};init();
   try{document.fonts.load(`${Math.round(H*.7)}px ${fam}`,q.text).then(()=>{if(PAD&&PAD.cv===cv&&!PAD.drawn)init()}).catch(()=>{})}catch(e){}
   let last=null;
   const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left-cv.clientLeft)*W/cv.clientWidth,(e.clientY-r.top-cv.clientTop)*H/cv.clientHeight]};
-  const seg=(a,b)=>{for(const c of [u,x]){c.strokeStyle="#27364B";c.lineWidth=H*.1;c.lineCap="round";c.lineJoin="round";c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke()}};
+  const seg=(a,b)=>{for(const c of [u,x]){c.strokeStyle="#27364B";c.lineWidth=q.free?9:H*.1;c.lineCap="round";c.lineJoin="round";c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke()}};
   cv.onpointerdown=e=>{if(!P||P.lock)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}last=pos(e);seg(last,last);PAD.drawn=true};
   cv.onpointermove=e=>{if(!last)return;e.preventDefault();const n=pos(e);seg(last,n);last=n};
   cv.onpointerup=cv.onpointercancel=()=>{last=null};
 }
 function checkPad(){
+  if(PAD.free){const {W,H,U}=PAD,u=U.getContext("2d").getImageData(0,0,W,H).data;let un=0,a=W,b=0;for(let y=0;y<H;y+=4)for(let x=0;x<W;x+=4)if(u[(y*W+x)*4+3]>100){un++;if(x<a)a=x;if(x>b)b=x}return {free:1,un,span:Math.max(0,b-a)/W,need:PAD.need}}
   const {W,H,G,T,U}=PAD,d=c=>c.getContext("2d").getImageData(0,0,W,H).data,g=d(G),t=d(T),u=d(U);let m=0,hit=0,un=0,out=0;
   for(let i=3;i<g.length;i+=16){const a=g[i]>100,b=u[i]>100;if(a){m++;if(b)hit++}if(b){un++;if(t[i]<=100)out++}}
   return {cov:m?hit/m:0,spill:un?out/un:1,un};
@@ -848,6 +852,30 @@ function story(si,pi){
      ${last?`<button class="pill stk go" data-act="story" data-s="${si}" data-p="0">처음부터 다시</button><button class="pill stk" data-act="stories">끝! 책꽂이로</button>`:`<button class="pill stk go" data-act="story" data-s="${si}" data-p="${pi+1}">다음 장 →</button>`}</div></div>`);
 }
 
+/* ───────── 문장 수준 국어 ───────── */
+const KO_ORDER=[["🏫","나는/학교에/갑니다"],["🐶","강아지가/꼬리를/흔들어요"],["🍎","동생이/사과를/먹어요"],["📖","언니가/책을/읽어요"],["🌧️","하늘에서/비가/내려요"],["⚽","친구와/공을/찼어요"],["🌸","꽃밭에/예쁜 꽃이/피었어요"],["🐦","작은 새가/나무 위에/앉았어요"],["🛏️","아기가/침대에서/잠을 자요"],["🎂","엄마가/케이크를/만들었어요"],["🚌","우리는/버스를 타고/소풍을 가요"],["🧼","나는/밥을 먹기 전에/손을/씻어요"],["🌙","밤하늘에/둥근 달이/환하게 떴어요"],["🐰","토끼가/깡충깡충/뛰어가요"],["🎨","나는/도화지에/무지개를/그렸어요"],["☂️","비가 와서/나는/우산을/썼어요"],["🦷","나는/자기 전에/이를/닦아요"],["🐟","물고기가/물속에서/헤엄쳐요"],["✉️","나는/할머니께/편지를/보냈어요"],["🌳","아빠와 나는/마당에/나무를/심었어요"],["❄️","겨울에는/하얀 눈이/내려요"],["🎒","나는/가방에/책과 공책을/넣었어요"],["🐱","고양이가/따뜻한 햇볕을/쬐어요"],["🥛","나는/아침마다/우유를/마셔요"]];
+function genKoOrder(){return six(KO_ORDER).map(it=>{const t=it[1].split("/"),full=t.join(" ")+".";
+  return {kind:"build",loose:1,ask:"낱말 조각을 눌러 문장을 만들어요",big:it[0],cls:"ko sm",target:t,tiles:shuffle(t),say:[full,"ko-KR"],after:full,learn:full,
+    hint:`‘~어요, ~습니다’로 끝나는 말은 문장의 <b>맨 끝</b>에 와요. ‘누가’나 ‘무엇이’로 시작하면 자연스러워요.`}})}
+const KO_JOSA=[["토끼__ 당근을 먹어요.","가","를"],["나는 물__ 마셔요.","을","이"],["동생__ 공원에서 놀아요.","이","을"],["나는 학교__ 가요.","에","을"],["친구__ 같이 그림을 그려요.","와","를"],["엄마__ 선물을 드렸어요.","께","가"],["강아지__ 밥을 주었어요.","에게","에서"],["우리는 놀이터__ 놀았어요.","에서","에게"],["나는 연필__ 글씨를 써요.","로","를"],["형__ 키가 커요.","은","을"],["사과__ 배를 샀어요.","와","가"],["나는 책__ 읽어요.","을","가"],["고양이__ 지붕 위에 있어요.","가","를"],["버스__ 타고 할머니 댁에 가요.","를","가"],["가위__ 색종이를 잘라요.","로","에"],["아빠__ 요리를 잘해요.","는","를"],["숟가락__ 밥을 먹어요.","으로","에게"],["나는 동생__ 사탕을 주었어요.","에게","에서"],["바다__ 물고기가 살아요.","에","를"],["비__ 주룩주룩 내려요.","가","를"],["나는 그림__ 그려요.","을","이"],["선생님__ 인사를 했어요.","께","를"],["우리 집__ 강아지가 있어요.","에","를"],["꽃__ 활짝 피었어요.","이","을"]];
+const KO_PRED=[["새가 하늘을 __.","날아요","헤엄쳐요","굴러요"],["물고기가 강에서 __.","헤엄쳐요","날아요","걸어요"],["나는 신발을 __.","신어요","입어요","써요"],["나는 모자를 __.","써요","신어요","입어요"],["나는 바지를 __.","입어요","신어요","써요"],["동생이 장갑을 __.","껴요","입어요","신어요"],["아기가 우유를 __.","마셔요","불어요","입어요"],["바람이 솔솔 __.","불어요","내려요","흘러요"],["눈이 펑펑 __.","내려요","불어요","흘러요"],["시냇물이 졸졸 __.","흘러요","내려요","불어요"],["아침 해가 동쪽에서 __.","떠요","져요","내려요"],["나는 이를 __.","닦아요","감아요","신어요"],["나는 머리를 __.","감아요","신어요","마셔요"],["엄마가 문을 __.","열어요","켜요","입어요"],["아빠가 전등을 __.","켜요","열어요","신어요"],["나는 피아노를 __.","쳐요","불어요","타요"],["나는 피리를 __.","불어요","쳐요","타요"],["나는 자전거를 __.","타요","쳐요","불어요"],["꽃에 물을 __.","줘요","먹어요","입어요"],["나는 사진을 __.","찍어요","그려요","불어요"],["나는 그림을 __.","그려요","찍어요","불어요"],["강아지가 멍멍 __.","짖어요","울려요","흘러요"],["종이 딸랑딸랑 __.","울려요","짖어요","흘러요"],["나는 연을 __.","날려요","심어요","신어요"],["나무를 마당에 __.","심어요","날려요","마셔요"]];
+const KO_COPY2=["나는 학교에 가요.","강아지가 뛰어요.","꽃이 피었어요.","하늘이 맑아요.","책을 읽어요.","친구와 놀았어요.","비가 내려요.","우유를 마셔요.","그림을 그려요.","달이 밝아요.","엄마, 사랑해요.","토끼가 뛰어요."];
+const KO_COPY3=["나는 아침 일찍 일어났습니다.","친구와 사이좋게 지내요.","할머니께 편지를 썼습니다.","가을 하늘이 높고 푸릅니다.","책을 읽으면 생각이 자랍니다.","작은 일에도 고맙다고 말해요.","비가 그치고 무지개가 떴습니다.","우리 가족은 함께 저녁을 먹어요.","어려운 친구를 도와주었습니다.","내일은 오늘보다 더 잘할 거예요."];
+const copyQ=t=>wq(t,{free:1,prompt:t,pcls:"line",ask:"문장을 보고 아래 칸에 똑같이 써요",learn:"✍️ "+t,hint:"한 글자씩 보고 또박또박 써요. 띄어 쓰는 곳과 문장 끝의 점(.)도 잊지 마요."});
+READ2.push(["숲속에 사는 다람쥐는 가을이 되면 바빠져요. 겨울 동안 먹을 도토리를 땅속에 묻어 두어야 하기 때문이에요.","다람쥐가 가을에 바쁜 까닭은 무엇인가요?","겨울에 먹을 도토리를 모으려고","친구를 만나려고","집을 새로 지으려고"],
+ ["지민이는 화분에 강낭콩을 심었어요. 며칠 뒤 작은 싹이 올라왔어요. 지민이는 싹이 잘 자라도록 창가에 화분을 옮겨 놓았어요.","지민이는 화분을 어디로 옮겼나요?","창가","책상 밑","현관"],
+ ["우리 가족은 토요일에 바닷가에 갔어요. 나는 모래로 성을 쌓고, 동생은 조개껍데기를 주웠어요.","동생은 바닷가에서 무엇을 했나요?","조개껍데기를 주웠다","모래성을 쌓았다","수영을 했다"],
+ ["소라는 준비물을 집에 두고 왔어요. 짝꿍 민호가 색연필을 빌려주었어요. 소라는 민호에게 고맙다고 말했어요.","민호는 소라에게 무엇을 빌려주었나요?","색연필","지우개","가위"],
+ ["밤에는 부엉이가 깨어 있어요. 부엉이는 큰 눈으로 어두운 곳에서도 잘 볼 수 있어요.","부엉이가 어두운 곳에서도 잘 볼 수 있는 까닭은 무엇인가요?","눈이 커서","귀가 커서","날개가 커서"],
+ ["할아버지 댁 마당에는 감나무가 있어요. 가을이 되면 주황색 감이 주렁주렁 열려요. 우리는 긴 장대로 감을 땄어요.","우리는 무엇으로 감을 땄나요?","긴 장대","사다리","손"]);
+READ3.push(["물은 온도에 따라 모습이 달라집니다. 차가워지면 딱딱한 얼음이 되고, 뜨거워지면 눈에 보이지 않는 수증기가 됩니다.","물이 차가워지면 무엇이 되나요?","얼음","수증기","구름"],
+ ["민재는 발표를 앞두고 몹시 떨렸습니다. 그래서 거울 앞에서 여러 번 소리 내어 연습했습니다. 발표 날, 민재는 또박또박 말할 수 있었습니다.","민재가 발표를 잘할 수 있었던 까닭은 무엇인가요?","여러 번 연습해서","친구가 대신해 줘서","발표가 쉬워서"],
+ ["옛날에는 시계가 없어서 해의 그림자를 보고 시간을 알았습니다. 그림자의 길이와 방향이 시간에 따라 달라지기 때문입니다.","옛날 사람들은 무엇을 보고 시간을 알았나요?","해의 그림자","달의 모양","새의 울음소리"],
+ ["서연이는 친구와 다투고 마음이 무거웠습니다. 집에 돌아와 미안하다는 편지를 썼습니다. 다음 날 편지를 받은 친구는 환하게 웃었습니다.","서연이는 친구와 화해하려고 무엇을 했나요?","편지를 썼다","선물을 샀다","전화를 걸었다"],
+ ["철새는 계절에 따라 사는 곳을 옮기는 새입니다. 제비는 봄에 우리나라에 왔다가 가을이 되면 따뜻한 남쪽으로 날아갑니다.","제비는 가을이 되면 어디로 가나요?","따뜻한 남쪽","추운 북쪽","높은 산"],
+ ["우리 반은 급식을 남기지 않기로 약속했습니다. 먹을 만큼만 받고, 받은 음식은 끝까지 먹습니다. 한 달 뒤 음식물 쓰레기가 절반으로 줄었습니다.","우리 반이 약속한 일은 무엇인가요?","급식을 남기지 않기","급식을 빨리 먹기","급식을 많이 받기"]);
+const gOf=w=>(S.gs&&S.gs[w])||S.grade||1;
+
 /* ───────── 학년 · 세계 · 단계 ───────── */
 const WORLD={ko:{name:"가나다 숲",sub:"국어",glyph:"가"},en:{name:"ABC 바다",sub:"영어",glyph:"A"},ma:{name:"숫자 언덕",sub:"산수",glyph:"1+2"}};
 const L=(k,title,goal,gen)=>({k,title,goal,gen});
@@ -861,7 +889,10 @@ const GR={
     ma:[L("count","수 세기","9까지의 수",genCount),L("bond","가르기와 모으기","9까지의 수 가르고 모으기",genBond),L("add10","더하기","합이 10까지인 덧셈",genMath(M.add10)),L("sub10","빼기","10까지의 뺄셈",genMath(M.sub10)),L("three","세 수의 계산","세 수의 덧셈과 뺄셈",genThree),
         L("hundred","100까지의 수","수의 순서, 10개씩 묶음, 크기 비교",genHundred),L("mix20","큰 수 더하기·빼기","받아올림·받아내림 첫걸음",genMath(M.g1mix)),NC(L("clock","시계 보기","몇 시, 몇 시 30분",genClock(1))),L("pattern","규칙 찾기","수와 모양의 규칙",genPattern),
         L("shape","여러 가지 모양","공·상자·둥근 기둥, 동그라미·세모·네모",genShape),L("story","이야기 문제","문장으로 된 덧셈과 뺄셈",genStory(1))]},
- 2:{ko:[L("build","낱말 만들기","글자 순서대로 쓰기",genKoBuild),L("wbat2","받침 낱말 쓰기","받침 있는 낱말 따라 쓰기",genWrite(KO_C.filter(x=>x[1].length<=3),it=>wq(it[1],{big:it[0]}))),L("sound","흉내 내는 말","소리·모양을 흉내 내는 말",genKoSound),
+ 2:{ko:[L("order","문장 만들기","낱말 조각으로 문장 짓기",genKoOrder),
+        L("josa","이/가, 을/를 고르기","문장에 알맞은 조사",genFill(KO_JOSA,"빈칸에 알맞은 말을 골라요","두 말을 하나씩 넣어 소리 내어 읽어 봐요. ‘누가’에는 이/가, ‘무엇을’에는 을/를, 장소에는 에/에서, 사람에게는 에게/께를 써요.")),
+        L("pred","어울리는 말","문장을 끝맺는 알맞은 말",genFill(KO_PRED,"문장에 어울리는 말을 골라요","세 가지를 하나씩 넣어 읽어 봐요. 앞의 낱말과 짝이 맞는 말이 있어요.")),
+        L("copy","문장 베껴 쓰기","짧은 문장을 보고 쓰기",genWrite(KO_COPY2,copyQ)),L("build","낱말 만들기","글자 순서대로 쓰기",genKoBuild),L("wbat2","받침 낱말 쓰기","받침 있는 낱말 따라 쓰기",genWrite(KO_C.filter(x=>x[1].length<=3),it=>wq(it[1],{big:it[0]}))),L("sound","흉내 내는 말","소리·모양을 흉내 내는 말",genKoSound),
         L("spell","바르게 쓰기","소리와 글자가 다른 낱말",genKoSpell),L("unit","세는 말","마리, 권, 송이 같은 단위",genKoUnit),L("syn","비슷한말","뜻이 비슷한 낱말",genKoSyn),
         L("deco","꾸며 주는 말","문장에 어울리는 꾸밈말",genFill(KO_DECO,"문장에 어울리는 꾸며 주는 말을 골라요","두 말을 하나씩 넣어 소리 내어 읽어 봐요. 어색하지 않은 쪽이 답이에요.")),
         L("mark","문장 부호","마침표, 물음표, 느낌표, 쉼표",genFill(KO_MARK,"알맞은 문장 부호를 골라요","묻는 문장은 <b>?</b>, 놀라거나 느낌을 나타내면 <b>!</b>, 설명하는 문장은 <b>.</b>, 낱말을 늘어놓거나 부를 때는 <b>,</b>를 써요.")),L("read","짧은 글 읽기","두세 문장을 읽고 답하기",genRead(READ2))],
@@ -874,7 +905,7 @@ const GR={
  3:{ko:[L("honor","높임말","웃어른께 쓰는 말",genKoHonor),L("mix","헷갈리는 말","소리가 비슷한 낱말 구별",genKoMix),L("base","기본형 찾기","국어사전에서 낱말 찾기",genKoBase),L("opp","반대말","뜻이 반대인 낱말",genKoOpp),L("group","낱말 묶기","포함하는 말과 포함되는 말",genKoGroup2),
         L("say","속담","자주 쓰는 속담 완성하기",genFill(KO_SAY,"속담의 빈칸에 들어갈 말을 골라요","속담을 소리 내어 읽어 봐요. 어른들이 자주 쓰는 말이에요.")),
         L("link","이어 주는 말","그래서, 하지만, 그리고",genFill(KO_LINK,"두 문장을 알맞게 이어 주는 말을 골라요","앞 문장 때문에 생긴 일이면 <b>그래서</b>, 반대되는 내용이면 <b>하지만·그러나·그런데</b>, 덧붙이면 <b>그리고</b>를 써요.")),
-        L("space","띄어쓰기","바르게 띄어 쓴 문장",genPick(KO_SPACE,"바르게 띄어 쓴 문장을 골라요","‘은, 는, 이, 가, 을, 를, 에, 와’ 같은 말은 <b>앞말에 붙여</b> 쓰고, 낱말과 낱말 사이는 띄어요.")),L("read","짧은 글 읽기","글의 내용과 까닭 찾기",genRead(READ3))],
+        L("space","띄어쓰기","바르게 띄어 쓴 문장",genPick(KO_SPACE,"바르게 띄어 쓴 문장을 골라요","‘은, 는, 이, 가, 을, 를, 에, 와’ 같은 말은 <b>앞말에 붙여</b> 쓰고, 낱말과 낱말 사이는 띄어요.")),L("read","짧은 글 읽기","글의 내용과 까닭 찾기",genRead(READ3)),L("copy","문장 베껴 쓰기","긴 문장을 보고 쓰기",genWrite(KO_COPY3,copyQ))],
     en:[L("talk","인사와 표현","교실에서 쓰는 영어 표현",genEnTalk),L("whello","인사말 따라 쓰기","Hello, Thanks 손으로 쓰기",genWrite(EN_HELLO,it=>wq(it[0],{cls:"en",prompt:it[1],pcls:"line"}))),
         L("big","큰 숫자","eleven부터 hundred까지",genEnBig),L("cal","요일과 달","Monday, January 같은 낱말",genEnCal),L("sent","문장 완성하기","I can / I like / It's",genEnSent),L("qa","질문과 대답","묻고 답하는 표현",genEnQA),L("order","문장 만들기","낱말 순서 맞추기",genEnOrder),
         L("spell57","어려운 낱말 쓰기","5~7글자 낱말 철자",genEnSpell(5,7))],
@@ -931,10 +962,11 @@ const MAXSTARS=ALL.length*3;
 
 /* ───────── 저장 (기기 + 계정) ───────── */
 const NAME0="단아";
-const fresh=()=>({v:2,rev:0,grade:1,stars:{},stickers:[],sound:true,diary:{},bun:[],car:0,name:NAME0,wr:[],read:[]});
+const fresh=()=>({v:2,rev:0,grade:1,gs:{ko:2,en:1,ma:1},stars:{},stickers:[],sound:true,diary:{},bun:[],car:0,name:NAME0,wr:[],read:[]});
 let S=fresh(),P=null,cloud=null,pushing=false,dirty=false;
 function adopt(j){if(!j||!j.stars)return;const old=!j.v||j.v<2;
   S=Object.assign(S,JSON.parse(JSON.stringify(j)));S.diary=S.diary||{};S.bun=S.bun||[];S.car=S.car||0;S.name=S.name||NAME0;S.wr=S.wr||[];S.read=S.read||[];
+  if(!j.gs){const g0=j.grade||1;S.gs={ko:Math.max(2,g0),en:g0,ma:g0}}
   if(old){S.stars={};Object.values(S.diary).forEach(e=>(e.p||[]).forEach(x=>{if(x.t===undefined)x.t=""}));S.v=2}}
 function load(d){try{adopt(d&&d.stars?d:JSON.parse(localStorage.getItem("mallang-v2")||"{}"))}catch(e){}}
 function saveLocal(){try{localStorage.setItem("mallang-v2",JSON.stringify(S))}catch(e){}}
@@ -970,7 +1002,7 @@ const today=()=>{const n=new Date();return dkey(n.getFullYear(),n.getMonth(),n.g
 const doneToday=w=>!!(S.diary[today()]&&S.diary[today()].p.some(p=>p.w===w));
 function streak(){let n=0;const d=new Date();if(!S.diary[today()])d.setDate(d.getDate()-1);
   while(S.diary[dkey(d.getFullYear(),d.getMonth(),d.getDate())]){n++;d.setDate(d.getDate()-1)}return n}
-function quest(w){const g=S.grade,ls=GR[g][w];let i=ls.findIndex((_,k)=>!S.stars[lid(g,w,k)]);
+function quest(w){const g=gOf(w),ls=GR[g][w];let i=ls.findIndex((_,k)=>!S.stars[lid(g,w,k)]);
   if(i<0)i=ls.findIndex((_,k)=>S.stars[lid(g,w,k)]<3);if(i<0)i=rnd(ls.length);return i}
 
 /* ───────── 소리 ───────── */
@@ -1051,7 +1083,6 @@ function home(step){
      <span class="row"><button class="pill stk" data-act="stories">📖 동화</button><button class="pill stk" data-act="diary">📔 다이어리</button><button class="pill stk" data-act="book">🐰 친구 ${S.bun.length}/${BUNS.length}</button>
      <button class="pill stk" data-act="sound" aria-label="소리 켜기 끄기">${S.sound?"🔊":"🔇"}</button></span></div>
    <div class="hero">${mas(t?"happy":"idle")}<div><h1>말랑이의 <span>공</span><span>부</span> <span>숲</span></h1><div class="bubble stk" id="bub">${tk.t}</div><div class="chips">${tk.c.map(c=>`<button class="pill stk chip" data-act="go" data-go="${c[1]}">${c[0]}</button>`).join("")}</div></div></div>
-   <div class="grades">${[1,2,3].map(k=>`<button class="pill stk${k===g?" on":""}" data-act="grade" data-g="${k}">${k}학년</button>`).join("")}</div>
    <div class="today stk"><div class="w"><b>오늘의 공부</b><span>${n.getMonth()+1}월 ${n.getDate()}일 ${WD[n.getDay()]}요일${sk>1?` · ${sk}일째 이어서 하는 중`:""}</span></div>
      <div class="chk">${WS.map(w=>`<i data-world="${w}" class="${doneToday(w)?"ok":""}">${WORLD[w].sub}${doneToday(w)?" ✔":""}</i>`).join("")}</div>
      ${dueList().length?`<button class="pill stk" data-act="review">틀린 문제 복습 ${dueList().length}개</button>`:""}
@@ -1059,14 +1090,15 @@ function home(step){
    <button class="buns stk" data-act="book" aria-label="토끼 친구 도감 열기"><span class="rowb">${S.bun.slice(-10).map(i=>bun(i)).join("")}${S.bun.length<BUNS.length?bun(0,"sil"):""}</span>
      <span class="txt">토끼 친구 ${S.bun.length}/${BUNS.length}<br>${S.bun.length<BUNS.length?`다음 친구까지 🥕 ${S.car}/${cost()}`:"모두 모았어요!"}</span></button>
    <div class="worlds">${WS.map(k=>`<button class="wcard stk" data-world="${k}" data-act="world" data-w="${k}">
-     <span class="glyph${k==="ko"?" k":""}" style="${k==="ma"?"font-size:1.4rem":""}">${WORLD[k].glyph}</span><span><b>${WORLD[k].name}</b><br><small>${g}학년 ${WORLD[k].sub}</small></span><span class="cnt">★ ${wstars(g,k)}/${GR[g][k].length*3}</span></button>`).join("")}</div>
+     <span class="glyph${k==="ko"?" k":""}" style="${k==="ma"?"font-size:1.4rem":""}">${WORLD[k].glyph}</span><span><b>${WORLD[k].name}</b><br><small>${gOf(k)}학년 ${WORLD[k].sub}</small></span><span class="cnt">★ ${wstars(gOf(k),k)}/${GR[gOf(k)][k].length*3}</span></button>`).join("")}</div>
    <div class="row"><button class="pill stk reset" data-act="reset">처음부터 다시 하기 (초기화)</button></div>
   </div>`);
 }
 function world(w){
-  P=null;const g=S.grade,ls=GR[g][w];
+  P=null;const g=gOf(w),ls=GR[g][w];
   show(`<div class="screen">
    <div class="top"><button class="pill stk" data-act="home">← 숲으로</button><h2 style="font-size:1.7rem">${g}학년 · ${WORLD[w].name}</h2><span class="pill stk">★ ${wstars(g,w)}/${ls.length*3}</span></div>
+   <div class="grades">${[1,2,3].map(k=>`<button class="pill stk${k===g?" on":""}" data-act="grade" data-w="${w}" data-g="${k}">${k}학년 ${WORLD[w].sub}</button>`).join("")}</div>
    <div class="levels">${ls.map((l,i)=>{const open=i===0||S.stars[lid(g,w,i-1)]>0,s=S.stars[lid(g,w,i)]||0;
      return `<button class="lv stk${open?"":" lock"}" ${open?`data-act="start" data-w="${w}" data-i="${i}"`:"disabled"}>
        <span class="n">${i+1}</span><span class="t"><b>${l.title}</b><span>${open?l.goal:"앞 단계를 먼저 끝내요"}</span></span>${open?starStr(s):"🔒"}</button>`}).join("")}</div>
@@ -1118,7 +1150,7 @@ function diary(y,m,sel){
 
 /* ───────── 놀이 ───────── */
 const cur=()=>P.queue[P.i];
-function start(w,i){const qs=GR[S.grade][w][i].gen();if(w==="ma"&&!GR[S.grade][w][i].nc)qs.splice(2+rnd(3),0,clockQ(S.grade));P={w,g:S.grade,i:0,lv:i,queue:qs,perfect:0,learned:[]};P.base=P.queue.length;showQ()}
+function start(w,i){const g=gOf(w),qs=GR[g][w][i].gen();if(w==="ma"&&!GR[g][w][i].nc)qs.splice(2+rnd(3),0,clockQ(g));P={w,g,i:0,lv:i,queue:qs,perfect:0,learned:[]};P.base=P.queue.length;showQ()}
 function showQ(){
   const q=cur();q.wrong=0;q.hinted=false;q.stage=0;q.filled=0;P.lock=false;
   const dots=P.queue.map((x,k)=>`<i class="${k<P.i?"on":k===P.i?"now":""}${x.retry?" re":""}"></i>`).join("");
@@ -1171,7 +1203,7 @@ function hint(){
     if(w.length>1){pick(w).classList.add("off");mood("think","하나를 지웠어. 남은 것 중에서 골라 봐!")}else mood("think","이제 둘 중 하나야. 할 수 있어!");
   }else if(q.kind==="write"){PAD.dark=true;PAD.base();mood("think","글자를 더 진하게 보여 줄게!")
   }else{
-    const t=[...document.querySelectorAll(".tile:not(.used)")].find(b=>b.dataset.v===q.target[q.filled]);
+    const last=q.target[q.target.length-1],t=[...document.querySelectorAll(".tile:not(.used)")].find(b=>q.loose?(q.filled<q.target.length-1?b.dataset.v!==last:true):b.dataset.v===q.target[q.filled]);
     if(t){t.classList.add("glow");mood("think","반짝이는 것을 눌러 봐!")}
   }
 }
@@ -1232,7 +1264,7 @@ app.addEventListener("click",ev=>{
   else if(a==="month"){sfx("tap");diary(+d.y,+d.m,today())}
   else if(a==="day"){sfx("tap");const [y,m]=d.k.split("-").map(Number);diary(y,m-1,d.k)}
   else if(a==="mood"){const e=S.diary[today()];if(e){e.m=d.v;save();sfx("ok");diary()}}
-  else if(a==="grade"){S.grade=+d.g;save();sfx("tap");home()}
+  else if(a==="grade"){S.gs=S.gs||{};S.gs[d.w]=+d.g;save();sfx("tap");world(d.w)}
   else if(a==="quest"){sfx("tap");const w=WS.find(x=>!doneToday(x));w?start(w,quest(w)):diary()}
   else if(a==="sound"){S.sound=!S.sound;save();sfx("tap");home()}
   else if(a==="start"){sfx("tap");start(d.w,+d.i)}
@@ -1241,12 +1273,14 @@ app.addEventListener("click",ev=>{
   else if(a==="hint")hint();
   else if(a==="clr"){if(PAD){PAD.u.clearRect(0,0,PAD.W,PAD.H);PAD.drawn=false;PAD.base();sfx("tap")}}
   else if(a==="chk"){if(!PAD)return;const r=checkPad();
+    if(r.free){if(r.un<r.need||r.span<.3){mood("think","문장을 끝까지 써 봐! 글자를 조금 더 크게 써도 좋아.");return}correct();return}
     if(r.un<40){mood("think","먼저 회색 글자를 따라 써 봐!");return}
     if(r.cov>=.6&&r.spill<=.35)correct();
     else{wrong(b);mood("think",r.spill>.35?"선 밖으로 많이 나갔어. 지우고 다시 써 보자!":"조금만 더! 회색 글자를 끝까지 채워 봐.")}}
   else if(a==="opt"){const q=cur();if(+d.i===q.answer){b.classList.add("good");correct()}else{wrong(b);setTimeout(()=>b.classList.add("off"),380)}}
   else if(a==="tile"){const q=cur();
-    if(d.v===q.target[q.filled]){b.classList.remove("glow");b.classList.add("used");const s=document.querySelectorAll(".slot")[q.filled];s.textContent=d.v;s.classList.add("fill");q.filled++;
+    const last=q.target[q.target.length-1];
+    if(q.loose?(d.v!==last||q.filled===q.target.length-1):d.v===q.target[q.filled]){b.classList.remove("glow");b.classList.add("used");const s=document.querySelectorAll(".slot")[q.filled];s.textContent=d.v;s.classList.add("fill");q.filled++;
       if(q.filled===q.target.length)correct();else sfx("tap")}
     else wrong(b)}
 });
