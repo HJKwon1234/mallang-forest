@@ -738,7 +738,7 @@ function genRead(pool){return()=>six(pool).map(it=>choice({ask:it[1],bigask:1,cl
 
 /* ───────── 오답 복습 ───────── */
 const dplus=n=>{const d=new Date();d.setDate(d.getDate()+n);return dkey(d.getFullYear(),d.getMonth(),d.getDate())};
-const dueList=()=>(S.wr||[]).filter(x=>x.due<=today());
+const dueList=()=>(S.wr||[]).filter(x=>x.due<=today()&&!x.q.listen);
 function addWrong(q){
   S.wr=S.wr||[];const k=q.ask+"|"+q.learn,c=JSON.parse(JSON.stringify(q));
   ["wrong","hinted","stage","filled","retry","rid"].forEach(x=>delete c[x]);if(c.ct!=null||c.fr)delete c.pic;
@@ -826,20 +826,20 @@ function story(si,pi){
 const WORLD={ko:{name:"가나다 숲",sub:"국어",glyph:"가"},en:{name:"ABC 바다",sub:"영어",glyph:"A"},ma:{name:"숫자 언덕",sub:"산수",glyph:"1+2"}};
 const L=(k,title,goal,gen)=>({k,title,goal,gen});
 const GR={
- 1:{ko:[L("hear","소리 듣고 글자 찾기","글자의 소리 알기",genKoHear),L("wjamo","자음·모음 쓰기","ㄱ~ㅎ, ㅏ~ㅣ 따라 쓰기",genWrite(JAMO,t=>wq(t))),L("compose","글자 만들기","자음과 모음으로 글자 만들기",genKoCompose),L("wsyl","글자 쓰기","받침 없는 글자 따라 쓰기",genWrite(SYL,t=>wq(t))),
+ 1:{ko:[L("wjamo","자음·모음 쓰기","ㄱ~ㅎ, ㅏ~ㅣ 따라 쓰기",genWrite(JAMO,t=>wq(t))),L("compose","글자 만들기","자음과 모음으로 글자 만들기",genKoCompose),L("wsyl","글자 쓰기","받침 없는 글자 따라 쓰기",genWrite(SYL,t=>wq(t))),
         L("pic","그림 보고 낱말 찾기","받침 없는 낱말 읽기",genKo(KO_A,3)),L("blank","빠진 글자 찾기","낱말 속 글자 알기",genKoBlank),L("wword","낱말 쓰기","두 글자 낱말 따라 쓰기",genWrite(KO_A.filter(x=>x[1].length===2),it=>wq(it[1],{big:it[0]}))),
         L("batchim","받침 있는 낱말","받침 있는 낱말 읽기",genKo(KO_B,4)),L("wbat","받침 글자 쓰기","받침 있는 글자 따라 쓰기",genWrite(KO_B.filter(x=>x[1].length===1),it=>wq(it[1],{big:it[0]}))),L("read","짧은 글 읽기","한두 문장을 읽고 답하기",genRead(READ1))],
-    en:[L("hear","소리 듣고 그림 찾기","영어 낱말 소리 익히기",genEnHear),L("abc","큰 글자 작은 글자","알파벳 대문자·소문자 짝",genEnABC),L("wup","대문자 쓰기","A~Z 따라 쓰기",genWrite(ABC,t=>wq(t.toUpperCase(),{cls:"en"}))),L("wlow","소문자 쓰기","a~z 따라 쓰기",genWrite(ABC,t=>wq(t,{cls:"en"}))),
+    en:[L("abc","큰 글자 작은 글자","알파벳 대문자·소문자 짝",genEnABC),L("wup","대문자 쓰기","A~Z 따라 쓰기",genWrite(ABC,t=>wq(t.toUpperCase(),{cls:"en"}))),L("wlow","소문자 쓰기","a~z 따라 쓰기",genWrite(ABC,t=>wq(t,{cls:"en"}))),
         L("seq","알파벳 순서","ABC 순서 알기",genEnSeq),L("pic","그림 보고 낱말 찾기","쉬운 영어 낱말 읽기",genEnPic(EN,3)),L("read","낱말 읽고 그림 찾기","낱말 뜻 알기",genEnRead),L("first","첫 글자 찾기","첫소리와 알파벳 잇기",genEnFirst),
         L("w3","세 글자 낱말 따라 쓰기","cat, dog 같은 낱말 쓰기",genWrite(EN.filter(x=>x[1].length===3),it=>wq(it[1],{cls:"en",big:it[0]})))],
     ma:[L("count","수 세기","9까지의 수",genCount),L("bond","가르기와 모으기","9까지의 수 가르고 모으기",genBond),L("add10","더하기","합이 10까지인 덧셈",genMath(M.add10)),L("sub10","빼기","10까지의 뺄셈",genMath(M.sub10)),L("three","세 수의 계산","세 수의 덧셈과 뺄셈",genThree),
         L("hundred","100까지의 수","수의 순서, 10개씩 묶음, 크기 비교",genHundred),L("mix20","큰 수 더하기·빼기","받아올림·받아내림 첫걸음",genMath(M.g1mix)),NC(L("clock","시계 보기","몇 시, 몇 시 30분",genClock(1))),L("pattern","규칙 찾기","수와 모양의 규칙",genPattern),
         L("shape","여러 가지 모양","공·상자·둥근 기둥, 동그라미·세모·네모",genShape),L("story","이야기 문제","문장으로 된 덧셈과 뺄셈",genStory(1))]},
- 2:{ko:[L("build","낱말 만들기","글자 순서대로 쓰기",genKoBuild),L("wbat2","받침 낱말 쓰기","받침 있는 낱말 따라 쓰기",genWrite(KO_C.filter(x=>x[1].length<=3),it=>wq(it[1],{big:it[0]}))),L("dict","받아쓰기","소리를 듣고 낱말 만들기",genKoDict),L("sound","흉내 내는 말","소리·모양을 흉내 내는 말",genKoSound),
+ 2:{ko:[L("build","낱말 만들기","글자 순서대로 쓰기",genKoBuild),L("wbat2","받침 낱말 쓰기","받침 있는 낱말 따라 쓰기",genWrite(KO_C.filter(x=>x[1].length<=3),it=>wq(it[1],{big:it[0]}))),L("sound","흉내 내는 말","소리·모양을 흉내 내는 말",genKoSound),
         L("spell","바르게 쓰기","소리와 글자가 다른 낱말",genKoSpell),L("unit","세는 말","마리, 권, 송이 같은 단위",genKoUnit),L("syn","비슷한말","뜻이 비슷한 낱말",genKoSyn),
         L("deco","꾸며 주는 말","문장에 어울리는 꾸밈말",genFill(KO_DECO,"문장에 어울리는 꾸며 주는 말을 골라요","두 말을 하나씩 넣어 소리 내어 읽어 봐요. 어색하지 않은 쪽이 답이에요.")),
         L("mark","문장 부호","마침표, 물음표, 느낌표, 쉼표",genFill(KO_MARK,"알맞은 문장 부호를 골라요","묻는 문장은 <b>?</b>, 놀라거나 느낌을 나타내면 <b>!</b>, 설명하는 문장은 <b>.</b>, 낱말을 늘어놓거나 부를 때는 <b>,</b>를 써요.")),L("read","짧은 글 읽기","두세 문장을 읽고 답하기",genRead(READ2))],
-    en:[L("colornum","색깔과 숫자","색 이름과 one~ten",genEnColorNum),L("hearword","듣고 낱말 고르기","소리와 철자 잇기",genEnHearWord),L("spell3","세 글자 낱말 쓰기","3글자 낱말 철자",genEnSpell(3,3)),L("pic2","새 낱말 익히기","동물·음식·몸·학교 낱말",genEnPic(EN2,4)),
+    en:[L("colornum","색깔과 숫자","색 이름과 one~ten",genEnColorNum),L("spell3","세 글자 낱말 쓰기","3글자 낱말 철자",genEnSpell(3,3)),L("pic2","새 낱말 익히기","동물·음식·몸·학교 낱말",genEnPic(EN2,4)),
         L("w45","낱말 따라 쓰기","4~5글자 낱말 손으로 쓰기",genWrite([...EN,...EN2].filter(x=>x[1].length>=4&&x[1].length<=5),it=>wq(it[1],{cls:"en",big:it[0]}))),L("spell45","긴 낱말 쓰기","4~5글자 낱말 철자",genEnSpell(4,5)),
         L("act","움직임 낱말","run, eat, sleep 같은 동작",genEnPic(EN_ACT,4)),L("opp","반대말","big ↔ small 같은 짝",genEnOpp),L("plural","하나와 여럿","낱말 끝의 s",genEnPlural)],
     ma:[L("place3","세 자리 수","백·십·일의 자리, 뛰어 세기, 크기 비교",genPlace(3)),L("add2c","두 자리 + 한 자리","받아올림이 있는 덧셈",genMath(M.add2c)),L("sub2c","두 자리 − 한 자리","받아내림이 있는 뺄셈",genMath(M.sub2c)),L("two","두 자리끼리","100까지의 덧셈과 뺄셈",genMath(M.two)),
@@ -849,7 +849,7 @@ const GR={
         L("say","속담","자주 쓰는 속담 완성하기",genFill(KO_SAY,"속담의 빈칸에 들어갈 말을 골라요","속담을 소리 내어 읽어 봐요. 어른들이 자주 쓰는 말이에요.")),
         L("link","이어 주는 말","그래서, 하지만, 그리고",genFill(KO_LINK,"두 문장을 알맞게 이어 주는 말을 골라요","앞 문장 때문에 생긴 일이면 <b>그래서</b>, 반대되는 내용이면 <b>하지만·그러나·그런데</b>, 덧붙이면 <b>그리고</b>를 써요.")),
         L("space","띄어쓰기","바르게 띄어 쓴 문장",genPick(KO_SPACE,"바르게 띄어 쓴 문장을 골라요","‘은, 는, 이, 가, 을, 를, 에, 와’ 같은 말은 <b>앞말에 붙여</b> 쓰고, 낱말과 낱말 사이는 띄어요.")),L("read","짧은 글 읽기","글의 내용과 까닭 찾기",genRead(READ3))],
-    en:[L("talk","인사와 표현","교실에서 쓰는 영어 표현",genEnTalk),L("heartalk","듣고 뜻 고르기","영어 문장 듣고 이해하기",genEnHearTalk),L("whello","인사말 따라 쓰기","Hello, Thanks 손으로 쓰기",genWrite(EN_HELLO,it=>wq(it[0],{cls:"en",prompt:it[1],pcls:"line"}))),
+    en:[L("talk","인사와 표현","교실에서 쓰는 영어 표현",genEnTalk),L("whello","인사말 따라 쓰기","Hello, Thanks 손으로 쓰기",genWrite(EN_HELLO,it=>wq(it[0],{cls:"en",prompt:it[1],pcls:"line"}))),
         L("big","큰 숫자","eleven부터 hundred까지",genEnBig),L("cal","요일과 달","Monday, January 같은 낱말",genEnCal),L("sent","문장 완성하기","I can / I like / It's",genEnSent),L("qa","질문과 대답","묻고 답하는 표현",genEnQA),L("order","문장 만들기","낱말 순서 맞추기",genEnOrder),
         L("spell57","어려운 낱말 쓰기","5~7글자 낱말 철자",genEnSpell(5,7))],
     ma:[L("add3","세 자리 수 덧셈","받아올림이 있는 세 자리 덧셈",genMath(M.add3)),L("sub3","세 자리 수 뺄셈","받아내림이 있는 세 자리 뺄셈",genMath(M.sub3)),L("mulBlank","곱셈구구 빈칸","□가 있는 곱셈",genMath(M.mulBlank)),L("div","나눗셈","곱셈구구로 나누기",genMath(M.div)),
