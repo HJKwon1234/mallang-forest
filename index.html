@@ -226,8 +226,9 @@ button.stk:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
 .shelf button{padding:0 0 .7rem;overflow:hidden;display:flex;flex-direction:column;gap:.2rem;text-align:center}
 .shelf svg,.sc svg{display:block;width:100%;height:auto}
 .shelf b{font-family:var(--f-display);font-weight:400;font-size:1.2rem;padding:.5rem .5rem 0}
-.sc{overflow:hidden;width:min(100%,calc(50vh*1.6));align-self:center}
-.stext{padding:1rem 1.3rem;font-family:var(--f-display);font-size:1.6rem;line-height:1.55;text-align:center;text-wrap:balance}
+.sc{overflow:hidden;width:min(100%,calc(46vh*1.6));align-self:center}
+.stext{padding:1rem 1.4rem;font-family:var(--f-display);font-size:1.32rem;line-height:1.65;text-align:center;text-wrap:pretty}
+.moral{background:#FFF3B8;padding:.7rem 1.2rem;border-radius:18px;font-size:1.05rem;text-align:center}
 @media (max-width:560px){.shelf{grid-template-columns:1fr}.stext{font-size:1.3rem}.prompt.txt{font-size:1.2rem}}
 .padwrap{display:flex;justify-content:center}
 .qcard.slim{flex:none;min-height:0;padding:.7rem 1rem}.qcard.slim .big{font-size:3rem}
@@ -762,13 +763,14 @@ function finishReview(){
 }
 
 /* ───────── 읽어 주는 그림 동화 ───────── */
-const svgB=(i,x,y,w)=>bunny(i).replace("<svg ",`<svg x="${x}" y="${y}" width="${w}" height="${Math.round(w*1.13)}" `);
+const svgB=(i,x,y,w,ov)=>bunny(i,ov).replace("<svg ",`<svg x="${x}" y="${y}" width="${w}" height="${Math.round(w*1.13)}" `);
 const em=(e,x,y,s)=>`<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle">${e}</text>`;
 function scene(bg,inner){
   const I="#27364B",sky=`<rect width="400" height="250" fill="#D6F0FF"/>`,hills=`<ellipse cx="110" cy="275" rx="260" ry="80" fill="#BDEBC8"/><ellipse cx="330" cy="285" rx="210" ry="80" fill="#A5E0B4"/>`;
   const stars=[[30,30],[80,70],[130,25],[190,55],[250,22],[300,90],[370,120],[40,130],[350,30],[220,110]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#FFF3B8"/>`).join("");
   const rain=Array.from({length:18},(_,k)=>`<path d="M${15+k*22} ${10+(k*37)%120}l-6 20" stroke="#6FA8DC" stroke-width="3.5" stroke-linecap="round"/>`).join("");
   const B={
+    snow:`<rect width="400" height="250" fill="#DCE8F2"/>`+[[30,40],[90,20],[150,60],[210,28],[270,70],[330,36],[380,90],[60,110],[190,120],[300,130],[120,150],[360,170]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff"/>`).join("")+`<ellipse cx="120" cy="282" rx="270" ry="84" fill="#fff" stroke="#C9D6E2" stroke-width="3"/><ellipse cx="330" cy="290" rx="220" ry="84" fill="#F4F8FB" stroke="#C9D6E2" stroke-width="3"/>`,
     day:sky+`<circle cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/>`+hills,
     field:sky+`<circle cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/><rect y="194" width="400" height="56" fill="#C99A6B"/><rect y="186" width="400" height="12" fill="#8FD39F"/>`,
     kitchen:`<rect width="400" height="250" fill="#FFF3D6"/><rect y="198" width="400" height="52" fill="#E9C9A0"/><rect x="300" y="26" width="76" height="66" rx="8" fill="#CFEFFF" stroke="${I}" stroke-width="4"/><path d="M338 26v66M300 59h76" stroke="${I}" stroke-width="3"/>`,
@@ -780,31 +782,32 @@ function scene(bg,inner){
   };
   return `<svg viewBox="0 0 400 250" role="img" aria-label="동화 그림">${B[bg]}${inner}</svg>`;
 }
+const FLC=()=>flower(78,76,"#FF7FA3")+flower(100,68,"#FFD23F")+flower(122,76,"#4AA8F0");
 const STORIES=[
- {t:"토토와 당근 케이크",p:[
-  ["day",()=>svgB(0,140,88,110)+em("💭",268,88,74)+em("🎂",268,78,26),"토토는 아침에 눈을 떴어요. “오늘은 당근이의 생일이야!”"],
-  ["field",()=>svgB(0,50,82,110)+em("🥕",225,222,44)+em("🥕",285,222,44)+em("🥕",345,222,44),"토토는 밭으로 달려가 커다란 당근을 뽑았어요. 영차, 영차!"],
-  ["field",()=>em("🥕",270,205,130)+svgB(0,40,86,108)+em("💦",158,92,30),"그런데 당근이 너무 무거웠어요. 토토는 낑낑거렸어요."],
-  ["field",()=>svgB(0,30,88,104)+em("🥕",200,210,70)+svgB(4,250,82,112),"그때 뽀글 요리사가 왔어요. “내가 도와줄게!”"],
-  ["kitchen",()=>svgB(0,40,84,108)+svgB(4,248,80,112)+em("🥣",200,205,56)+em("🥚",168,150,26)+em("🥕",232,150,26),"둘은 당근을 썰고, 달걀을 넣고, 빙글빙글 저었어요."],
-  ["kitchen",()=>svgB(0,22,94,98)+svgB(4,276,90,102)+em("🍰",200,170,92)+em("✨",140,84,30)+em("✨",262,74,26),"오븐에서 달콤한 냄새가 솔솔 났어요. 당근 케이크 완성!"],
-  ["day",()=>em("🎈",52,70,42)+em("🎈",350,150,40)+svgB(0,22,92,100)+svgB(1,146,84,110)+svgB(4,274,90,102)+em("🎂",200,72,48),"“당근아, 생일 축하해!” 셋은 케이크를 맛있게 나눠 먹었어요."]]},
- {t:"별이의 달나라 여행",p:[
-  ["night",()=>svgB(5,140,86,112),"밤이 되었어요. 별이는 창밖의 달을 바라보았어요."],
-  ["night",()=>svgB(5,50,96,100)+em("🚀",255,165,120)+em("💨",185,222,36),"“달에는 누가 살까?” 별이는 로켓을 타고 슈웅 날아올랐어요."],
-  ["space",()=>em("⭐",60,76,42)+em("🌟",335,84,48)+em("⭐",84,208,30)+em("⭐",322,206,34)+svgB(5,146,62,110),"별들이 반짝반짝 인사했어요. “안녕, 별이야!”"],
-  ["moon",()=>svgB(5,40,78,106)+svgB(3,236,74,112)+em("💤",345,70,36),"달에 도착하니 잠보가 쿨쿨 자고 있었어요."],
-  ["moon",()=>svgB(5,58,36,104)+svgB(3,232,58,108)+em("✨",200,60,30),"“잠보야, 일어나! 같이 놀자.” 둘은 달 위에서 통통 뛰었어요."],
-  ["moon",()=>em("🌍",322,84,74)+svgB(5,44,78,104)+svgB(3,166,80,102),"놀다 보니 멀리 지구가 파랗게 빛났어요. “우리 집이 저기 있네!”"],
-  ["night",()=>em("🏠",300,214,92)+svgB(5,56,88,106),"별이는 잠보에게 손을 흔들고 집으로 돌아왔어요. 오늘 밤은 꿈에서도 달나라예요."]]},
- {t:"비 오는 날의 퐁당이",p:[
-  ["rain",()=>svgB(8,144,84,112),"주룩주룩 비가 내려요. 퐁당이는 노란 모자를 썼어요."],
-  ["rain",()=>svgB(8,144,58,112)+em("💦",112,222,34)+em("💦",292,222,34),"퐁당이는 물웅덩이에서 퐁당퐁당 뛰었어요. “아이, 신나!”"],
-  ["rain",()=>em("🌳",306,196,176)+svgB(2,214,108,94)+em("💧",214,104,22),"그런데 꽃분이는 나무 아래에서 울상이었어요. “내 꽃이 다 젖었어.”"],
-  ["rain",()=>svgB(8,60,90,104)+svgB(2,224,98,98)+em("🍃",274,104,84),"퐁당이는 커다란 나뭇잎으로 우산을 만들어 주었어요."],
-  ["rain",()=>svgB(8,94,98,100)+svgB(2,204,98,100)+em("🍃",202,98,130)+em("🎵",340,92,30),"둘은 나뭇잎 우산을 쓰고 빗소리를 들었어요. 토독토독."],
-  ["rainbow",()=>svgB(8,74,96,100)+svgB(2,226,96,100),"비가 그치자 하늘에 커다란 무지개가 떴어요."],
-  ["rainbow",()=>svgB(8,16,102,94)+svgB(19,146,60,110)+svgB(2,290,102,94),"무지개 토끼가 내려와 말했어요. “서로 도와서 참 예쁘구나!” 셋은 활짝 웃었어요."]]}
+ {t:"당근 한 뿌리",m:"나눈 것은 사라지지 않고 더 크게 돌아와요.",p:[
+  ["snow",()=>em("🏠",318,206,84)+svgB(0,120,88,108),"옛날 옛적, 깊은 산골에 토토라는 토끼가 살았어요. 그해 겨울에는 눈이 유난히 많이 내려서 먹을 것이 몹시 귀했어요."],
+  ["snow",()=>em("🥕",262,208,112)+svgB(0,54,88,108),"어느 날 토토는 눈 덮인 밭에서 커다란 당근 한 뿌리를 찾았어요. “이거면 사흘은 배불리 먹겠구나!” 토토는 당근을 꼭 끌어안았어요."],
+  ["snow",()=>svgB(0,50,90,104)+em("🥕",190,196,50)+svgB(1,236,90,104,{front:""})+em("💧",232,132,20),"집으로 돌아오는 길에 토토는 배가 고파 울고 있는 당근이를 만났어요. 토토는 잠시 망설이다가, 당근을 뚝 잘라 절반을 내밀었어요."],
+  ["snow",()=>svgB(0,44,90,104)+em("🥣",200,218,48)+svgB(4,238,86,108),"조금 더 가니 요리사 뽀글이 빈 그릇을 들여다보며 한숨을 쉬고 있었어요. 토토는 남은 당근을 또 절반으로 나누어 주었어요."],
+  ["night",()=>em("🏠",316,208,86)+svgB(0,120,90,106)+em("🥕",250,190,22),"집에 도착하니 토토의 손에는 손가락만 한 당근 꼬투리만 남아 있었어요. 배에서는 꼬르륵 소리가 났지만, 마음은 이상하게 따뜻했어요."],
+  ["kitchen",()=>svgB(1,16,94,98)+svgB(0,150,88,104)+svgB(4,282,90,100)+em("🌰",64,84,32)+em("🍲",332,82,36),"이튿날 아침, 누군가 문을 똑똑 두드렸어요. 당근이는 아껴 둔 도토리를, 뽀글은 갓 끓인 수프를 들고 서 있었어요."],
+  ["kitchen",()=>svgB(0,22,92,100)+svgB(1,148,86,108)+svgB(4,276,90,102)+em("🍲",200,72,46)+em("✨",140,60,24)+em("✨",262,58,24),"셋이 둘러앉으니 작은 밥상이 잔칫상이 되었어요. 토토는 그제야 알았답니다. 나눈 것은 사라지지 않고, 더 크게 돌아온다는 것을요."]]},
+ {t:"달에 오른 별이",m:"멀리 있는 것만 바라보다가 곁에 있는 소중한 것을 놓치지 말아요.",p:[
+  ["night",()=>svgB(5,140,88,110,{front:""}),"옛날에 별이라는 토끼가 살았어요. 별이는 밤마다 달을 올려다보며 생각했어요. “저 달에만 가면 세상에서 가장 행복해질 거야.”"],
+  ["night",()=>svgB(5,46,94,100,{front:""})+svgB(6,236,84,112)+em("✨",200,84,30),"별이는 숲속의 마법사 루루를 찾아갔어요. 루루가 말했어요. “돌을 하루에 하나씩 쌓아 보렴. 백 일이 지나면 달에 닿는 탑이 될 거야.”"],
+  ["day",()=>em("🪨",270,222,46)+em("🪨",312,222,46)+em("🪨",291,188,44)+em("🪨",291,154,40)+svgB(5,60,92,102,{front:""}),"별이는 비가 오나 바람이 부나 하루도 빠짐없이 돌을 날랐어요. 친구들이 같이 놀자고 불러도 고개를 저었어요."],
+  ["moon",()=>svgB(5,146,74,110),"백 일째 되던 밤, 별이는 드디어 달에 올라섰어요. 그런데 달은 조용하고, 텅 비어 있었어요. 말을 걸어 줄 친구도 없었어요."],
+  ["moon",()=>em("🌍",322,86,76)+svgB(5,60,78,106),"그때 저 멀리 파랗게 빛나는 것이 보였어요. 친구들이 사는 숲과 별이의 작은 집이 있는 지구였어요."],
+  ["moon",()=>em("🌍",330,62,50)+svgB(5,140,78,108)+em("💭",262,96,60),"“가장 아름다운 것은 처음부터 내 곁에 있었구나.” 별이는 달의 흙 한 줌을 주머니에 넣고 천천히 탑을 내려왔어요."],
+  ["day",()=>svgB(0,24,92,98)+svgB(5,146,84,108,{front:""})+svgB(2,282,92,98),"별이는 친구들에게 달 이야기를 들려주고, 그날부터 함께 뛰어놀았어요. 멀리 있는 것만 바라보다가 곁에 있는 소중한 것을 놓쳐서는 안 된답니다."]]},
+ {t:"임금님의 무거운 왕관",m:"참된 임금은 빛나는 왕관이 아니라 남을 아끼는 마음으로 되는 거예요.",p:[
+  ["day",()=>svgB(7,144,84,112)+em("✨",118,72,26)+em("✨",288,82,26),"옛날 어느 토끼 나라에 임금님이 살았어요. 임금님은 번쩍이는 금 왕관을 무척 자랑스러워해서, 잠을 잘 때도 벗지 않았어요."],
+  ["day",()=>svgB(2,36,96,96)+em("🪣",150,222,40)+svgB(7,236,86,108),"어느 해 큰 가뭄이 들어 마을의 샘이 말라 버렸어요. 백성들은 물을 찾아 헤맸지만, 임금님은 왕관만 닦고 있었어요."],
+  ["day",()=>em("⛰️",200,150,120)+svgB(8,44,94,100)+svgB(7,240,86,108),"어린 토끼 퐁당이가 임금님을 찾아왔어요. “임금님, 산 너머에 맑은 샘이 있대요. 하지만 길이 험해서 무거운 것을 지고는 갈 수 없어요.”"],
+  ["day",()=>em("🌳",52,206,150)+em("🌳",356,150,110)+svgB(7,130,90,106,{front:""})+em("🪨",300,226,54)+em("👑",300,190,38),"임금님은 길을 나섰지만, 왕관이 나뭇가지에 걸리고 고개가 무거워 자꾸 넘어졌어요. 임금님은 한참을 망설이다가 왕관을 벗어 바위 위에 내려놓았어요."],
+  ["day",()=>svgB(7,46,92,102,{front:""})+em("💦",200,214,50)+svgB(8,238,94,100),"몸이 가벼워진 임금님은 퐁당이와 함께 산을 넘어 맑은 샘을 찾았어요. 둘은 밤새 땅을 파고 물길을 내어 마을까지 물을 끌어왔어요."],
+  ["day",()=>svgB(2,18,96,96)+svgB(7,146,84,110,{front:FLC()})+svgB(8,286,96,96),"물을 마신 백성들은 기뻐하며 꽃으로 엮은 관을 임금님 머리에 씌워 주었어요. 꽃 왕관은 깃털처럼 가벼웠어요."],
+  ["rainbow",()=>em("🌼",54,226,34)+em("🌷",346,226,34)+svgB(7,144,84,112,{front:FLC()}),"그 뒤로 임금님은 금 왕관 대신 꽃 왕관을 썼어요. 참된 임금은 빛나는 왕관이 아니라, 백성을 아끼는 마음으로 되는 것이니까요."]]}
 ];
 function stories(){
   P=null;const rd=S.read||[];
@@ -818,6 +821,7 @@ function story(si,pi){
   show(`<div class="screen"><div class="top"><button class="pill stk" data-act="stories">← 책꽂이</button><h2 style="font-size:1.6rem">${st.t}</h2><span class="pill stk">${pi+1} / ${n}</span></div>
    <div class="sc stk">${scene(pg[0],pg[1]())}</div>
    <div class="stext stk" id="stx">${pg[2]}</div>
+   ${last?`<div class="moral stk"><b class="d">이야기가 들려주는 말</b> · ${st.m}</div>`:""}
    <div class="row">${pi?`<button class="pill stk" data-act="story" data-s="${si}" data-p="${pi-1}">← 앞 장</button>`:""}<button class="pill stk" data-act="reread">🔊 읽어 주기</button>
      ${last?`<button class="pill stk go" data-act="story" data-s="${si}" data-p="0">처음부터 다시</button><button class="pill stk" data-act="stories">끝! 책꽂이로</button>`:`<button class="pill stk go" data-act="story" data-s="${si}" data-p="${pi+1}">다음 장 →</button>`}</div></div>`);
 }
@@ -883,8 +887,8 @@ const BUNS=[
  {n:"붕붕이",d:"꿀벌 옷을 입고 꽃밭을 날아요.",fur:"#FFE27A",lop:1,back:wings("#FFFFFF"),front:`<path d="M90 70q-6-24-18-26M110 70q6-24 18-26" fill="none" ${K}/><circle cx="72" cy="44" r="6" fill="${INK}"/><circle cx="128" cy="44" r="6" fill="${INK}"/><path d="M64 172q36 12 72 0M68 190q32 9 64 0" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>`},
  {n:"무지개 토끼",d:"스무 번째! 비 갠 하늘에서 온 특별한 친구예요.",fur:"#FFFFFF",eyes:"happy",back:`<path d="M8 156a92 92 0 0 1 184 0" fill="none" stroke="#FF7FA3" stroke-width="13"/><path d="M21 156a79 79 0 0 1 158 0" fill="none" stroke="#FFD23F" stroke-width="13"/><path d="M34 156a66 66 0 0 1 132 0" fill="none" stroke="#4AA8F0" stroke-width="13"/>`,front:star(30,40,12,"#FFD23F")+star(172,30,10,"#FF7FA3")+star(166,186,9,"#4AA8F0")}
 ];
-function bunny(i){
-  const b=BUNS[i],f=b.fur,ear=(x,r)=>`<g transform="rotate(${r} ${x} 90)"><ellipse cx="${x}" cy="46" rx="16" ry="44" fill="${f}" ${K}/><ellipse cx="${x}" cy="50" rx="7" ry="28" fill="#FFB3C7"/></g>`;
+function bunny(i,ov){
+  const b=ov?Object.assign({},BUNS[i],ov):BUNS[i],f=b.fur,ear=(x,r)=>`<g transform="rotate(${r} ${x} 90)"><ellipse cx="${x}" cy="46" rx="16" ry="44" fill="${f}" ${K}/><ellipse cx="${x}" cy="50" rx="7" ry="28" fill="#FFB3C7"/></g>`;
   const lop=x=>`<ellipse cx="${x}" cy="138" rx="15" ry="38" fill="${f}" ${K} transform="rotate(${x<100?14:-14} ${x} 138)"/>`;
   const eyes=b.eyes==="sleep"?`<path d="M72 116q8 7 16 0M112 116q8 7 16 0" fill="none" ${K}/>`:b.eyes==="happy"?`<path d="M72 120q8-11 16 0M112 120q8-11 16 0" fill="none" ${K}/>`
     :`<circle cx="80" cy="116" r="7" fill="${INK}"/><circle cx="120" cy="116" r="7" fill="${INK}"/><circle cx="82.5" cy="113.5" r="2.5" fill="#fff"/><circle cx="122.5" cy="113.5" r="2.5" fill="#fff"/>`;
@@ -957,6 +961,17 @@ function sfx(n){if(!S.sound)return;try{
     o.connect(g).connect(ac.destination);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+d+.02)});
 }catch(e){}}
 function speak(t,lang){if(!S.sound)return;try{const u=new SpeechSynthesisUtterance(t);u.lang=lang;u.rate=lang==="en-US"?.8:.92;u.pitch=1.15;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+
+function koVoice(){try{
+  const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang));if(!vs.length)return null;
+  const sc=v=>(/premium|enhanced|고품질|프리미엄|natural|neural|siri/i.test(v.name)?4:0)+(/yuna|유나|sora|소라|sunhi|선히|heami|seoyeon|female/i.test(v.name)?2:0)-(/minsu|민수|injoon|인준|male|hyunsu|현수|rocko|grandpa|eddy|reed/i.test(v.name)&&!/female/i.test(v.name)?5:0);
+  return vs.slice().sort((a,b)=>sc(b)-sc(a))[0]}catch(e){return null}}
+// 동화·대화용: 차분한 여자 목소리를 고르고, 문장마다 끊어 천천히 읽는다.
+function tell(text){if(!S.sound)return;try{
+  speechSynthesis.cancel();const v=koVoice();
+  (text.match(/[^.!?]+[.!?]+[”’"']?\s*|[^.!?]+$/g)||[text]).forEach(t=>{t=t.trim();if(!t)return;const u=new SpeechSynthesisUtterance(t);u.lang="ko-KR";if(v)u.voice=v;u.rate=.84;u.pitch=.94;speechSynthesis.speak(u)});
+}catch(e){}}
+try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 
 /* ───────── 말랑이 ───────── */
 function mallang(mood){
@@ -1169,8 +1184,8 @@ app.addEventListener("click",ev=>{
   else if(a==="world"){sfx("tap");d.w==="rv"?home():world(d.w)}
   else if(a==="review"){sfx("tap");startReview()}
   else if(a==="stories"){sfx("tap");try{speechSynthesis.cancel()}catch(e){}stories()}
-  else if(a==="story"){sfx("tap");story(+d.s,+d.p);speak(STORIES[+d.s].p[+d.p][2],"ko-KR")}
-  else if(a==="reread"){speak(document.getElementById("stx").textContent,"ko-KR")}
+  else if(a==="story"){sfx("tap");story(+d.s,+d.p);tell(STORIES[+d.s].p[+d.p][2])}
+  else if(a==="reread"){tell(document.getElementById("stx").textContent)}
   else if(a==="book"){sfx("tap");book()}
   else if(a==="bun"){sfx("tap");book(+d.i);zoom(+d.i)}
   else if(a==="close"){const z=document.querySelector(".zoom,.bk,.rs");if(z)z.remove()}
@@ -1178,7 +1193,7 @@ app.addEventListener("click",ev=>{
   else if(a==="reset"){sfx("tap");askReset()}
   else if(a==="resetok"){const keep={sound:S.sound,name:S.name};S=Object.assign(fresh(),keep);save();sfx("tap");home()}
   else if(a==="go"){sfx("tap");const g=d.go;
-    if(g.startsWith("chat:")){home(g.slice(5));speak(document.getElementById("bub").textContent,"ko-KR")}
+    if(g.startsWith("chat:")){home(g.slice(5));tell(document.getElementById("bub").textContent)}
     else if(g.startsWith("world:"))world(g.slice(6));
     else if(g==="book")book();
     else if(g==="stories")stories();
