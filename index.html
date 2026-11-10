@@ -227,6 +227,27 @@ button.stk:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
 .shelf svg,.sc svg{display:block;width:100%;height:auto}
 .shelf b{font-family:var(--f-display);font-weight:400;font-size:1.2rem;padding:.5rem .5rem 0}
 .sc{overflow:hidden;width:min(100%,calc(46vh*1.6));align-self:center}
+.sc svg *,.shelf svg *{transform-box:fill-box;transform-origin:center}
+.a-bob{animation:sbob 2.6s ease-in-out infinite}
+@keyframes sbob{50%{transform:translateY(-5px)}}
+.a-tw{animation:stw 1.7s ease-in-out infinite}
+@keyframes stw{50%{opacity:.25;transform:scale(.75)}}
+.a-tw2{animation:stw2 2s ease-in-out infinite}
+@keyframes stw2{50%{transform:scale(1.12) rotate(-6deg)}}
+.a-fl{animation:sfl 3.2s ease-in-out infinite}
+@keyframes sfl{50%{transform:translateY(-9px) rotate(4deg)}}
+.a-drip{animation:sdrip 1.4s ease-in infinite}
+@keyframes sdrip{0%{transform:translateY(-6px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
+.a-rain{animation:srain .9s linear infinite}
+@keyframes srain{0%{transform:translate(8px,-28px);opacity:0}25%,75%{opacity:1}100%{transform:translate(-8px,28px);opacity:0}}
+.a-snow{animation:ssnow 5.5s linear infinite}
+@keyframes ssnow{0%{transform:translate(0,-30px);opacity:0}15%,80%{opacity:1}50%{transform:translate(10px,45px)}100%{transform:translate(0,120px);opacity:0}}
+.a-sun{animation:ssun 4s ease-in-out infinite}
+@keyframes ssun{50%{transform:scale(1.1)}}
+.a-bow{animation:sbow 1.6s ease-out backwards}
+@keyframes sbow{from{opacity:0;transform:translateY(30px)}}
+.a-page{animation:spage .45s ease-out}
+@keyframes spage{from{opacity:.2;transform:translateX(18px)}}
 .stext{padding:1rem 1.4rem;font-family:var(--f-display);font-size:1.32rem;line-height:1.65;text-align:center;text-wrap:pretty}
 .moral{background:#FFF3B8;padding:.7rem 1.2rem;border-radius:18px;font-size:1.05rem;text-align:center}
 @media (max-width:560px){.shelf{grid-template-columns:1fr}.stext{font-size:1.3rem}.prompt.txt{font-size:1.2rem}}
@@ -763,22 +784,23 @@ function finishReview(){
 }
 
 /* ───────── 읽어 주는 그림 동화 ───────── */
-const svgB=(i,x,y,w,ov)=>bunny(i,ov).replace("<svg ",`<svg x="${x}" y="${y}" width="${w}" height="${Math.round(w*1.13)}" `);
-const em=(e,x,y,s)=>`<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle">${e}</text>`;
+const svgB=(i,x,y,w,ov)=>`<g class="a-bob" style="animation-delay:-${((x*7+y)%24)/10}s">`+bunny(i,ov).replace("<svg ",`<svg x="${x}" y="${y}" width="${w}" height="${Math.round(w*1.13)}" `)+"</g>";
+const EMA={"✨":"a-tw","⭐":"a-tw","🌟":"a-tw","🎈":"a-fl","💭":"a-fl","💤":"a-fl","🎵":"a-fl","🌍":"a-fl","💧":"a-drip","💦":"a-drip","👑":"a-tw2","🚀":"a-fl"};
+const em=(e,x,y,s)=>`<text class="${EMA[e]||""}" style="animation-delay:-${((x+y)%20)/10}s" x="${x}" y="${y}" font-size="${s}" text-anchor="middle">${e}</text>`;
 function scene(bg,inner){
   const I="#27364B",sky=`<rect width="400" height="250" fill="#D6F0FF"/>`,hills=`<ellipse cx="110" cy="275" rx="260" ry="80" fill="#BDEBC8"/><ellipse cx="330" cy="285" rx="210" ry="80" fill="#A5E0B4"/>`;
-  const stars=[[30,30],[80,70],[130,25],[190,55],[250,22],[300,90],[370,120],[40,130],[350,30],[220,110]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#FFF3B8"/>`).join("");
-  const rain=Array.from({length:18},(_,k)=>`<path d="M${15+k*22} ${10+(k*37)%120}l-6 20" stroke="#6FA8DC" stroke-width="3.5" stroke-linecap="round"/>`).join("");
+  const stars=[[30,30],[80,70],[130,25],[190,55],[250,22],[300,90],[370,120],[40,130],[350,30],[220,110]].map((p,k)=>`<circle class="a-tw" style="animation-delay:-${k*.37}s" cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#FFF3B8"/>`).join("");
+  const rain=Array.from({length:18},(_,k)=>`<path class="a-rain" style="animation-delay:-${(k*.13)%1}s" d="M${15+k*22} ${10+(k*37)%120}l-6 20" stroke="#6FA8DC" stroke-width="3.5" stroke-linecap="round"/>`).join("");
   const B={
-    snow:`<rect width="400" height="250" fill="#DCE8F2"/>`+[[30,40],[90,20],[150,60],[210,28],[270,70],[330,36],[380,90],[60,110],[190,120],[300,130],[120,150],[360,170]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff"/>`).join("")+`<ellipse cx="120" cy="282" rx="270" ry="84" fill="#fff" stroke="#C9D6E2" stroke-width="3"/><ellipse cx="330" cy="290" rx="220" ry="84" fill="#F4F8FB" stroke="#C9D6E2" stroke-width="3"/>`,
-    day:sky+`<circle cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/>`+hills,
-    field:sky+`<circle cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/><rect y="194" width="400" height="56" fill="#C99A6B"/><rect y="186" width="400" height="12" fill="#8FD39F"/>`,
+    snow:`<rect width="400" height="250" fill="#DCE8F2"/>`+[[30,40],[90,20],[150,60],[210,28],[270,70],[330,36],[380,90],[60,110],[190,120],[300,130],[120,150],[360,170]].map((p,k)=>`<circle class="a-snow" style="animation-delay:-${k*.45}s" cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff"/>`).join("")+`<ellipse cx="120" cy="282" rx="270" ry="84" fill="#fff" stroke="#C9D6E2" stroke-width="3"/><ellipse cx="330" cy="290" rx="220" ry="84" fill="#F4F8FB" stroke="#C9D6E2" stroke-width="3"/>`,
+    day:sky+`<circle class="a-sun" cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/>`+hills,
+    field:sky+`<circle class="a-sun" cx="345" cy="48" r="26" fill="#FFD23F" stroke="${I}" stroke-width="4"/><rect y="194" width="400" height="56" fill="#C99A6B"/><rect y="186" width="400" height="12" fill="#8FD39F"/>`,
     kitchen:`<rect width="400" height="250" fill="#FFF3D6"/><rect y="198" width="400" height="52" fill="#E9C9A0"/><rect x="300" y="26" width="76" height="66" rx="8" fill="#CFEFFF" stroke="${I}" stroke-width="4"/><path d="M338 26v66M300 59h76" stroke="${I}" stroke-width="3"/>`,
     night:`<rect width="400" height="250" fill="#26315E"/>${stars}<circle cx="335" cy="52" r="28" fill="#FFE98A" stroke="${I}" stroke-width="4"/><ellipse cx="200" cy="292" rx="330" ry="84" fill="#3E5A6B"/>`,
     space:`<rect width="400" height="250" fill="#1B2350"/>${stars}`,
     moon:`<rect width="400" height="250" fill="#1B2350"/>${stars}<ellipse cx="200" cy="310" rx="340" ry="126" fill="#E8E2C8" stroke="${I}" stroke-width="4"/><ellipse cx="70" cy="222" rx="22" ry="7" fill="#CFC8A8"/><ellipse cx="330" cy="232" rx="28" ry="8" fill="#CFC8A8"/>`,
     rain:`<rect width="400" height="250" fill="#C3D3E2"/>${rain}<ellipse cx="200" cy="292" rx="330" ry="84" fill="#9CCFAA"/><ellipse cx="200" cy="226" rx="92" ry="13" fill="#8FC1EA"/>`,
-    rainbow:sky+`<path d="M50 230a150 150 0 0 1 300 0" fill="none" stroke="#FF7FA3" stroke-width="14"/><path d="M65 230a135 135 0 0 1 270 0" fill="none" stroke="#FFD23F" stroke-width="14"/><path d="M80 230a120 120 0 0 1 240 0" fill="none" stroke="#4AA8F0" stroke-width="14"/>`+hills
+    rainbow:sky+`<g class="a-bow"><path d="M50 230a150 150 0 0 1 300 0" fill="none" stroke="#FF7FA3" stroke-width="14"/><path d="M65 230a135 135 0 0 1 270 0" fill="none" stroke="#FFD23F" stroke-width="14"/><path d="M80 230a120 120 0 0 1 240 0" fill="none" stroke="#4AA8F0" stroke-width="14"/></g>`+hills
   };
   return `<svg viewBox="0 0 400 250" role="img" aria-label="동화 그림">${B[bg]}${inner}</svg>`;
 }
@@ -819,7 +841,7 @@ function story(si,pi){
   P=null;const st=STORIES[si],n=st.p.length,pg=st.p[pi],last=pi===n-1;
   if(last){S.read=S.read||[];if(!S.read.includes(si))S.read.push(si);const k=today(),e=S.diary[k]=S.diary[k]||{p:[],l:[],m:""},tag="📖 "+st.t;if(!e.l.includes(tag))e.l.push(tag);save()}
   show(`<div class="screen"><div class="top"><button class="pill stk" data-act="stories">← 책꽂이</button><h2 style="font-size:1.6rem">${st.t}</h2><span class="pill stk">${pi+1} / ${n}</span></div>
-   <div class="sc stk">${scene(pg[0],pg[1]())}</div>
+   <div class="sc stk a-page">${scene(pg[0],pg[1]())}</div>
    <div class="stext stk" id="stx">${pg[2]}</div>
    ${last?`<div class="moral stk"><b class="d">이야기가 들려주는 말</b> · ${st.m}</div>`:""}
    <div class="row">${pi?`<button class="pill stk" data-act="story" data-s="${si}" data-p="${pi-1}">← 앞 장</button>`:""}<button class="pill stk" data-act="reread">🔊 읽어 주기</button>
